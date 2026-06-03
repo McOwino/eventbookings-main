@@ -39,8 +39,10 @@ const CATEGORY_META: Record<string, { heading: string; icon: React.ReactNode }> 
   },
 };
 
-// Category order for consistent display
-const CATEGORY_ORDER = ["booking-guides", "menus"];
+// Backward-compat export — no longer hardcoded, kept so old imports don't break
+export const DOC_CATEGORIES: DocCategory[] = [];
+
+
 
 interface DocumentRow {
   id: string;
