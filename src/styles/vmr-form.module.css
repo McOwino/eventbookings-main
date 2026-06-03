@@ -1,0 +1,336 @@
+/* ── Section cards ── */
+.card {
+  background: #ffffff;
+  border: 0.5px solid #e8e4de;
+  border-radius: 14px;
+  padding: clamp(18px, 3vw, 28px);
+  margin-bottom: 16px;
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+
+.cardLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #C0272D;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cardLabel::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: #C0272D;
+  border-radius: 99px;
+}
+
+/* ── Grid helpers ── */
+.grid2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+/* Ensure grid children share equal height (useful for multi-column layouts) */
+.grid2 { grid-auto-rows: 1fr; }
+.fillHeight { height: 100%; display: flex; flex-direction: column; }
+@media (max-width: 1024px) {
+  /* Tablet: two columns */
+  .grid2 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+}
+.full { grid-column: 1 / -1; }
+
+/* ── Field wrapper ── */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #888780;
+  text-transform: uppercase;
+}
+.req { color: #C0272D; }
+
+/* ── Cost pill ── */
+.costPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  background: #FCEBEB;
+  border: 0.5px solid rgba(192,39,45,0.2);
+  color: #791F1F;
+  border-radius: 99px;
+  padding: 9px 18px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.costPill strong { font-size: 15px; color: #C0272D; }
+
+/* ── Birthday person card ── */
+.bdayPerson {
+  border: 0.5px solid #e8e4de;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  background: #f9f7f5;
+  position: relative;
+}
+
+/* ── Action bar ── */
+.actionBar {
+  margin-top: 28px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Contract box (preview + PDF clone) ── */
+.contractBox {
+  background: #fff;
+  border: 0.5px solid #e8e4de;
+  border-radius: 14px;
+  padding: 48px 52px;
+  /* Body copy uses DM Sans at weight 400 */
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+@media (max-width: 600px) {
+  .contractBox { padding: 24px 18px; }
+}
+.contractBox h1 {
+  /* Headings use DM Serif Display bold */
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.contractBox :global(.sub-center) {
+  text-align: center;
+  font-size: 12px;
+  color: #888780;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 0.5px solid #e8e4de;
+  line-height: 1.5;
+}
+.contractBox :global(h2), .contractBox :global(h3) {
+  /* Section titles use DM Serif Display bold */
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 12px;
+  margin-top: 20px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #C0272D;
+}
+.contractBox :global(p) {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+  color: #333;
+}
+.contractBox :global(.data-row) {
+  display: flex;
+  border: 1px solid #e8e4de;
+  margin-bottom: -1px;
+}
+.contractBox :global(.dk) {
+  /* Event detail titles: use DM Serif Display bold */
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 700;
+  width: 180px;
+  min-width: 140px;
+  padding: 6px 10px;
+  background: #f9f7f5;
+  border-right: 1px solid #e8e4de;
+  font-size: 12px;
+}
+.contractBox :global(.dv) {
+  padding: 6px 10px;
+  font-size: 12px;
+  flex: 1;
+}
+.contractBox .hameco,
+.contractBox .client-name {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 700;
+}
+
+/* Payment table to match event details styling */
+.contractBox .payment-table {
+  /* make table visually wider than the inner padding so it uses more horizontal space
+     Increased by 50% to extend further into the contract padding */
+  width: calc(150% + 48px);
+  /* shift left half of the extra percentage plus the original padding offset */
+  margin-left: calc(-25% - 24px);
+  border-collapse: collapse;
+  margin-bottom: 12px;
+}
+.contractBox .payment-table tr { border: none; }
+.contractBox .payment-table td.dk { padding: 12px; background: #f9f7f5; border: 1px solid #e8e4de; width: 45%; vertical-align: top; }
+.contractBox .payment-table td.dv { padding: 12px; border: 1px solid #e8e4de; vertical-align: top; }
+.contractBox :global(.sig-sig-area) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-top: 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  border-top: 0.5px solid #e8e4de;
+.media-fallback {}
+/* Responsive padding for mobile */
+@media (max-width: 640px) {
+  .contractBox { padding: 32px 28px; }
+}
+.contractBox h1 {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 22px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.contractBox :global(p), .contractBox :global(li), .contractBox :global(.dv), .contractBox :global(.dk) {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+}
+  border-radius: 14px;
+  padding: 28px;
+}
+.signPanelTitle {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+.signPanel {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  background: #fff;
+  border: 0.5px solid #e8e4de;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.signPanel .sigCanvas {
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+}
+
+/* Actions for the contract preview (align to right within the centered contract width) */
+.contractActions {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+/* Status/notice area aligned to the left within the centered contract width */
+.contractStatus {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  text-align: left;
+  font-size: 13px;
+  color: #333;
+}
+.signPanelSub {
+  font-size: 12px;
+  color: #888780;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 0.5px solid #e8e4de;
+}
+.sigCanvas {
+  width: 100%;
+  height: 180px;
+  border: 2px dashed #e8e4de;
+  border-radius: 4px;
+  background: #faf8f4;
+  touch-action: none;
+  cursor: crosshair;
+  display: block;
+}
+.sigMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 11px;
+  color: #888780;
+}
+
+/* Signature answer styling: make all answered fields blue */
+.contractBox :global(.sig-sig-area) .sig-answer {
+  color: #0b66ff;
+  font-weight: 700;
+}
+.contractBox :global(.sig-sig-area) .client-name {
+  color: #0b66ff;
+}
+
+/* Also style answers inside the sign panel */
+.signPanel .sig-answer,
+.signPanel .client-name {
+  color: #0b66ff;
+  font-weight: 700;
+}
+
+/* ── PDF clone (off-screen) ── */
+.pdfClone {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 794px;
+  background: #fff;
+  padding: 48px 52px;
+}
+
+/* Ensure the contract inside the pdf clone matches preview exactly */
+.pdfClone .contractBox {
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  width: 100%;
+  padding: 48px 52px;        /* ← SAME padding as preview */
+  box-shadow: none;
+  background: #fff;
+}
+
+/* Force tablet-style padding when rendering on the Sign Contract page */
+.signPage .contractBox {
+  padding: 48px 52px;
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .signPage .contractBox { padding: 32px 28px; }
+}

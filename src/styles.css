@@ -1,0 +1,543 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap');
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-facility-village-bowl: var(--facility-village-bowl);
+  --color-facility-under-the-sea: var(--facility-under-the-sea);
+  --color-facility-ozone: var(--facility-ozone);
+  --color-facility-mini-golf: var(--facility-mini-golf);
+  --color-facility-rev: var(--facility-rev);
+  --color-facility-glitch: var(--facility-glitch);
+  --color-facility-ballpoint: var(--facility-ballpoint);
+  --color-event-day: var(--event-day);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.129 0.042 264.695);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.129 0.042 264.695);
+  /* Village Market brand red (#C0272D) — shared public + admin */
+  --primary: oklch(0.505 0.177 25.33);
+  --primary-foreground: oklch(0.985 0.002 247);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.505 0.177 25.33 / 45%);
+  --chart-1: oklch(0.505 0.177 25.33);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.505 0.177 25.33);
+  --sidebar-primary-foreground: oklch(0.985 0.002 247);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* Facility palette — matches src/lib/facility-colors.ts (public + admin) */
+  --facility-village-bowl: oklch(0.596 0.118 166.5);   /* #1D9E75 */
+  --facility-under-the-sea: oklch(0.48 0.12 250);      /* #185FA5 */
+  --facility-ozone: oklch(0.505 0.177 25.33);          /* #C0272D */
+  --facility-mini-golf: oklch(0.62 0.14 130);          /* #639922 */
+  --facility-rev: oklch(0.62 0.14 65);                 /* #BA7517 */
+  --facility-glitch: oklch(0.52 0.16 285);             /* #534AB7 */
+  --facility-ballpoint: oklch(0.62 0.16 5);            /* #D4537E */
+  --event-day: oklch(0.48 0.12 250);
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.58 0.16 25.33);
+  --primary-foreground: oklch(0.985 0.002 247);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.58 0.16 25.33 / 45%);
+  --chart-1: oklch(0.58 0.16 25.33);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.58 0.16 25.33);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
+/* Public site shell — shared with VillageMarketPage header, main, footer */
+.shell-max {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .shell-max {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Promotion section */
+.promo-section {
+  background: #18212b;
+  color: #fff;
+  padding: 32px 0;
+}
+
+/* Promotion carousel (Swiper coverflow) */
+.promo-carousel {
+  padding-bottom: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.promo-carousel .promo-slide {
+  width: 520px;
+  height: 380px;
+  max-width: calc(100% - 48px);
+}
+@media (max-width: 640px) {
+  .promo-carousel .promo-slide {
+    width: 320px;
+    height: 240px;
+  }
+}
+.promo-carousel .promo-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #18212b;
+  color: #fff;
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 45%);
+}
+.promo-carousel .promo-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.promo-carousel .slide-content {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  bottom: 0;
+  padding: 88px 16px 24px;
+  box-sizing: border-box;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.75));
+  border-radius: 0 0 8px 8px;
+  color: #fff;
+}
+.promo-carousel .slide-content h2 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.1;
+}
+.promo-carousel .slide-content p {
+  margin: 8px 0 0;
+  opacity: 0.65;
+  font-size: 14px;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Countdown badge */
+.promo-carousel .countdown-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.promo-carousel .countdown-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+.promo-carousel .countdown-value {
+  font-size: 14px;
+  font-weight: 700;
+}
+.promo-carousel .countdown-unit {
+  font-size: 9px;
+  opacity: 0.7;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+.promo-carousel .countdown-sep {
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.6;
+  padding-bottom: 11px;
+}
+.promo-carousel .countdown-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.promo-carousel .swiper-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 20%);
+  transition: background 0.2s;
+}
+.promo-carousel .swiper-nav-btn:hover {
+  background: #fff;
+}
+.promo-carousel .promo-pagination .swiper-pagination-bullet {
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0.6;
+  margin: 0 4px;
+}
+.promo-carousel .promo-pagination .swiper-pagination-bullet-active {
+  background: #fff;
+  opacity: 1;
+  width: 24px;
+  border-radius: 4px;
+}
+
+
+/* ===== Active Promotions (poster carousel) ===== */
+.promo-carousel-container {
+  width: 100%;
+  max-width: 1400px;
+}
+.promo-carousel-container .carousel-header {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+.promo-carousel-container .carousel-header h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.promo-carousel-container .carousel-header p {
+  color: hsl(var(--muted-foreground));
+  margin-top: 0.3rem;
+  font-size: 0.9rem;
+}
+.active-promo-swiper {
+  padding: 0.5rem 0.2rem 2.5rem 0.2rem !important;
+}
+.active-promo-swiper .swiper-slide { height: auto; display: flex; }
+.promo-poster-card {
+  background: hsl(var(--card));
+  border-radius: 1.5rem;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0,0,0,0.02);
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  border: 1px solid hsl(var(--border));
+  height: 100%;
+}
+.promo-poster-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 30px 40px -14px rgba(0, 32, 54, 0.25);
+  border-color: hsl(var(--primary) / 0.35);
+}
+.poster-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: linear-gradient(145deg, hsl(var(--muted)), hsl(var(--secondary)));
+}
+.poster-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  display: block;
+}
+.promo-poster-card:hover .poster-img { transform: scale(1.04); }
+.poster-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  padding: 0.25rem 0.85rem;
+  border-radius: 40px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-transform: uppercase;
+}
+.poster-overlay.badge-hot {
+  background: #e25822;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.promo-content {
+  padding: 1.1rem 1.2rem 1.2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.promo-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: 0.6rem;
+  color: hsl(var(--foreground));
+}
+.promo-desc-list {
+  margin: 0.3rem 0 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.detail-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.825rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+.highlight {
+  background: hsl(var(--accent));
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-weight: 700;
+  color: hsl(var(--accent-foreground));
+}
+.validity-row {
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: hsl(var(--muted-foreground));
+  margin-top: 0.25rem;
+}
+.cta-button {
+  margin-top: 1rem;
+  width: 100%;
+  background: linear-gradient(95deg, hsl(var(--primary)), hsl(var(--primary) / 0.85));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  padding: 0.65rem 0;
+  border-radius: 40px;
+  font-weight: 700;
+  font-size: 0.825rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  font-family: inherit;
+}
+.cta-button:hover {
+  filter: brightness(0.95);
+  gap: 0.7rem;
+}
+.active-promo-swiper .swiper-pagination-bullet {
+  background: hsl(var(--muted-foreground));
+  opacity: 0.5;
+}
+.active-promo-swiper .swiper-pagination-bullet-active {
+  background: hsl(var(--primary));
+  opacity: 1;
+}
+
+/* Dark promotions strip (matches recreation logo banner) */
+.vm-promo-dark.active-promotions-root {
+  background: #000;
+  padding: 0 0 3rem;
+  width: 100%;
+}
+.vm-promo-dark .promo-carousel-container .carousel-header h2 {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  color: #fff !important;
+}
+.vm-promo-dark .promo-carousel-container .carousel-header p {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+.active-promo-slide.swiper-slide {
+  width: min(300px, calc(100vw - 48px));
+  max-width: 300px;
+}
+@media (min-width: 640px) {
+  .active-promo-slide.swiper-slide {
+    width: 300px;
+  }
+}
+.vm-promo-dark .active-promo-swiper .swiper-button-next,
+.vm-promo-dark .active-promo-swiper .swiper-button-prev {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+.vm-promo-dark .active-promo-swiper .swiper-button-next::after,
+.vm-promo-dark .active-promo-swiper .swiper-button-prev::after {
+  font-size: 14px;
+  font-weight: 700;
+}
+@media (max-width: 639px) {
+  .vm-promo-dark .active-promo-swiper .swiper-button-next,
+  .vm-promo-dark .active-promo-swiper .swiper-button-prev {
+    display: none !important;
+  }
+}
+.vm-promo-dark .active-promo-swiper .swiper-pagination-bullet {
+  background: rgba(255, 255, 255, 0.35) !important;
+  opacity: 1 !important;
+}
+.vm-promo-dark .active-promo-swiper .swiper-pagination-bullet-active {
+  background: #c0272d !important;
+}
+
+.promo-section-title {
+  font-size: clamp(1.75rem, 3vw, 2.5rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em;
+}
+
