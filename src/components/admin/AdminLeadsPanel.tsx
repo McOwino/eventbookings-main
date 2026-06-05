@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -40,6 +41,28 @@ function formatLeadTime(start: string | null, end: string | null) {
 export function AdminLeadsPanel({ embedded = false }: { embedded?: boolean }) {
   const qc = useQueryClient();
 
+  // Realtime subscription — invalidates both the panel list and the sidebar
+  // badge count the moment any row is inserted, updated, or deleted in leads.
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-leads-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leads" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["admin", "leads"] });
+          qc.invalidateQueries({ queryKey: ["admin", "leads", "new-count"] });
+          // Also refresh the sidebar badge used in AdminShell
+          qc.invalidateQueries({ queryKey: ["admin", "leads", "new-count", "sidebar"] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "leads"],
     queryFn: async (): Promise<Lead[]> => {
@@ -66,6 +89,8 @@ export function AdminLeadsPanel({ embedded = false }: { embedded?: boolean }) {
     onSuccess: () => {
       toast.success("Status updated");
       qc.invalidateQueries({ queryKey: ["admin", "leads"] });
+      qc.invalidateQueries({ queryKey: ["admin", "leads", "new-count"] });
+      qc.invalidateQueries({ queryKey: ["admin", "leads", "new-count", "sidebar"] });
     },
     onError: () => toast.error("Failed to update status"),
   });
