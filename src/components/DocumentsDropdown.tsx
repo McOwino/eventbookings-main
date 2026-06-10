@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
@@ -42,6 +43,9 @@ const CATEGORY_META: Record<string, { heading: string; icon: React.ReactNode }> 
 // Backward-compat export — no longer hardcoded, kept so old imports don't break
 export const DOC_CATEGORIES: DocCategory[] = [];
 
+// Category order for consistent display
+const CATEGORY_ORDER = ["booking-guides", "menus"];
+
 
 
 interface DocumentRow {
@@ -60,7 +64,7 @@ export function usePublicDocuments() {
     queryKey: ["public", "documents"],
     queryFn: async (): Promise<DocCategory[]> => {
       const { data, error } = await supabase
-        .from("public_documents")
+        .from("public_documents" as never)
         .select("id, label, description, category, url, file_type, position")
         .eq("is_active", true)
         .order("category", { ascending: true })
@@ -119,6 +123,8 @@ export function DocumentsDropdown({ onBrandRed = false }: DocumentsDropdownProps
   const [activeDoc, setActiveDoc] = useState<VMRDocument | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { data: categories = [] } = usePublicDocuments();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => { setOpen(false); setActiveDoc(null); }, [pathname]);
 
   useEffect(() => {
     if (!open) return;

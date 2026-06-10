@@ -35,6 +35,7 @@ export interface PublicEvent {
   endTime: string;
   status: EventStatus;
   event_space?: string | null;
+  pax?: number | null;
 }
 
 export const facilityColorClass: Record<Facility, string> = {
@@ -99,6 +100,7 @@ export interface DbEventRow {
   end_time: string;
   status: string;
   event_space?: string | null;
+  pax?: number | null;
 }
 
 export function mapEventRow(row: DbEventRow): PublicEvent | null {
@@ -121,6 +123,7 @@ export function mapEventRow(row: DbEventRow): PublicEvent | null {
     endTime: row.end_time.slice(0, 5),
     status,
     event_space: row.event_space ?? null,
+    pax: (row as any).pax ?? null,
   };
 }
 

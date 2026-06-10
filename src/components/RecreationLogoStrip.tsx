@@ -1,4 +1,4 @@
-import villageRecreationLogo from "@/assets/Village_Recreation-Logo.png";
+const villageRecreationLogo = "https://yjgylhjuqggnetfwqqgh.supabase.co/storage/v1/object/sign/assets/Village_Recreation-Logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jMTEwZjk4NS03MTUyLTQ0MjEtYjcwYy00NDNmMTNhNmQ3Y2QiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvVmlsbGFnZV9SZWNyZWF0aW9uLUxvZ28ucG5nIiwiaWF0IjoxNzgwODE5OTkyLCJleHAiOjE4NzU0Mjc5OTJ9.cwzmVd0mFRcRIXOcL61_5MQLgmONg91axWpdEFgDJjg";
 
 /** Solid #000 bar with the composite venue logos (reference layout). */
 export function RecreationLogoStrip({ dense }: { dense?: boolean }) {

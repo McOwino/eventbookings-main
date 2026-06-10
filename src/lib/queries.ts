@@ -16,7 +16,7 @@ export const publicEventsQueryOptions = () =>
       const { data, error } = await supabase
         .from("events" as never)
         .select(
-          "id, client_name, organization, event_type, facility, event_date, start_time, end_time, status, event_space",
+          "id, client_name, organization, event_type, facility, event_date, start_time, end_time, status, event_space, pax",
         )
         .order("event_date", { ascending: true });
       if (error) throw error;

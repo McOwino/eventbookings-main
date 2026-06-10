@@ -55,7 +55,17 @@ function row(k: string, v: string): string {
   return `<div class="data-row"><div class="dk">${k}</div><div class="dv">${v || "—"}</div></div>`;
 }
 
-export function buildContractHTML(d: ContractData, withSig = false): string {
+export async function fetchStampUrl(): Promise<string> {
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data } = await supabase
+    .from("app_assets")
+    .select("url")
+    .eq("key", "company_stamp")
+    .single();
+  return data?.url ?? "https://yjgylhjuqggnetfwqqgh.supabase.co/storage/v1/object/public/assets/Virtual_Stamp.png";
+}
+
+export function buildContractHTML(d: ContractData, withSig = false, stampUrl?: string): string {
   const sig =
     withSig && d.sigDataURL
       ? `<img src="${d.sigDataURL}" style="max-height:60px;display:block;margin-top:4px;">`
@@ -201,7 +211,7 @@ export function buildContractHTML(d: ContractData, withSig = false): string {
         <div style="margin-top:8px;font-size:13px;"><strong>Designation:</strong> <span class="sig-answer">GENERAL MANAGER</span></div>
         <div style="margin-top:8px;font-size:13px;"><strong>Date:</strong> <span class="sig-answer">${d.today}</span></div>
         <div style="margin-top:12px;font-size:11px;color:#888;">Company Stamp:</div>
-        <div style="margin-top:8px;"><img src="/images/Virtual_Stamp.png" alt="Company Stamp" style="max-height:80px;border-radius:4px;"/></div>
+        <img src="${stampUrl ?? "https://yjgylhjuqggnetfwqqgh.supabase.co/storage/v1/object/public/assets/Virtual_Stamp.png"}" style="max-height:80px;display:block;margin-top:8px;">
       </div>
       <div class="sig-block">
         <strong>Signed by Client</strong>

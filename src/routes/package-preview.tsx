@@ -72,7 +72,7 @@ function PackagePreview() {
       <div className="page">
         {/* Header */}
         <div className="header">
-          <img src={assetUrl("Village_Recreation-Logo.png")} alt="Village Recreation" />
+          <img src="https://yjgylhjuqggnetfwqqgh.supabase.co/storage/v1/object/sign/assets/Village_Recreation-Logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jMTEwZjk4NS03MTUyLTQ0MjEtYjcwYy00NDNmMTNhNmQ3Y2QiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvVmlsbGFnZV9SZWNyZWF0aW9uLUxvZ28ucG5nIiwiaWF0IjoxNzgwODE5OTkyLCJleHAiOjE4NzU0Mjc5OTJ9.cwzmVd0mFRcRIXOcL61_5MQLgmONg91axWpdEFgDJjg" alt="Village Recreation" />
         </div>
 
         <div className="body">

@@ -12,25 +12,25 @@ export const VM_PAGE_BG = "#faf8f6";
  * Keep in sync with `--facility-*` tokens in styles.css.
  */
 export const FACILITY_COLORS: Record<string, string> = {
-  "Village Bowl": "#1D9E75",
+  "Village Bowl": "#2E9E4A",
   "Under the Sea": "#185FA5",
-  "Ozone Trampoline Park": "#C0272D",
-  "Mini-Golf": "#639922",
-  REV: "#BA7517",
-  Glitch: "#534AB7",
-  Ballpoint: "#D4537E",
+  "Ozone Trampoline Park": "#F97316",
+  "Mini-Golf": "#EAB308",
+  REV: "#EC4899",
+  Glitch: "#EC4899",
+  Ballpoint: "#9333EA",
   "All Facilities": "#888780",
   "Village Market": "#888780",
 };
 
 export const FACILITY_COLORS_BY_ENUM: Record<FacilityEnum, string> = {
-  village_bowl: "#1D9E75",
+  village_bowl: "#2E9E4A",
   under_the_sea: "#185FA5",
-  ozone_trampoline_park: "#C0272D",
-  mini_golf: "#639922",
-  rev: "#BA7517",
-  glitch: "#534AB7",
-  ballpoint: "#D4537E",
+  ozone_trampoline_park: "#F97316",
+  mini_golf: "#EAB308",
+  rev: "#EC4899",
+  glitch: "#EC4899",
+  ballpoint: "#9333EA",
 };
 
 export const DEFAULT_FACILITY_COLOR = "#888780";

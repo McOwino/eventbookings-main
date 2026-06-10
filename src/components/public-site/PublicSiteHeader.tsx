@@ -20,13 +20,7 @@ const MessageSquareIcon = (): ReactElement => (
   </svg>
 );
 
-const LogInIcon = (): ReactElement => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m10 17 5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-  </svg>
-);
-
-export function PublicSiteHeader({ title, tagline, hideAdmin }: { title?: string; tagline?: string; hideAdmin?: boolean } = {}) {
+export function PublicSiteHeader({ title, tagline }: { title?: string; tagline?: string } = {}) {
   const [activeDoc, setActiveDoc] = useState<VMRDocument | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const hideFeedbackNav = pathname === "/feedback" || pathname.startsWith("/feedback/");
@@ -152,28 +146,7 @@ export function PublicSiteHeader({ title, tagline, hideAdmin }: { title?: string
               <span className="hide-mobile">Feedback</span>
             </Link>
           )}
-          {!hideAdmin && (
-            <Link
-              to="/login"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: 13,
-                fontWeight: 700,
-                color: VM_RED,
-                background: "#fff",
-                borderRadius: 8,
-                padding: "7px 14px",
-                textDecoration: "none",
-                border: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <LogInIcon />
-              <span className="hide-mobile">Admin</span>
-            </Link>
-          )}
+
         </nav>
         {activeDoc && (
           <DocumentPreviewModal doc={activeDoc} onClose={() => setActiveDoc(null)} />

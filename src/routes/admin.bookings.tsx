@@ -150,6 +150,7 @@ type ContractRow = {
   facility?: FacilityEnum;
   event_date?: string;
   status?: string;
+  contract_status?: string;
 };
 
 function compressPayload(str: string): string {
@@ -268,31 +269,93 @@ function BookingsPage() {
           signature_url,
           generated_by,
           created_at,
-          events (
+          events!inner (
+            id,
             client_name,
             organization,
             event_type,
             facility,
             event_date,
-            status
+            status,
+            contract_status
           )
         `)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((c: any) => ({
-        id:            c.id,
-        event_id:      c.event_id,
-        content:       c.content,
-        signature_url: c.signature_url,
-        generated_by:  c.generated_by,
-        created_at:    c.created_at,
-        client_name:   c.events?.client_name,
-        organization:  c.events?.organization,
-        event_type:    c.events?.event_type,
-        facility:      c.events?.facility,
-        event_date:    c.events?.event_date,
-        status:        c.events?.status,
+
+      const rows = (data ?? []).map((c: any) => ({
+        id:               c.id,
+        event_id:         c.event_id,
+        content:          c.content,
+        signature_url:    c.signature_url as string | null,
+        generated_by:     c.generated_by,
+        created_at:       c.created_at,
+        client_name:      c.events?.client_name,
+        organization:     c.events?.organization,
+        event_type:       c.events?.event_type,
+        facility:         c.events?.facility,
+        event_date:       c.events?.event_date,
+        status:           c.events?.status,
+        contract_status:  c.events?.contract_status,
       })) as ContractRow[];
+
+      // ── Cross-check storage bucket for any contract whose signature_url is
+      //    still null — a file may have been uploaded without the DB being
+      //    updated (e.g. network hiccup after upload).
+      const unsigned = rows.filter((r) => !r.signature_url);
+      if (unsigned.length > 0) {
+        const { data: listed } = await supabase.storage
+          .from("contracts")
+          .list("signed", { limit: 500, offset: 0 });
+
+        if (listed && listed.length > 0) {
+          const SUPABASE_URL = (import.meta as any).env.VITE_SUPABASE_URL as string;
+          const fileNames = new Set(listed.map((f) => f.name));
+
+          const backfillPromises: Promise<void>[] = [];
+
+          for (const row of unsigned) {
+            // The signing modal names files:
+            // VMR-Contract-<client-name-slugified>-<YYYY-MM-DD>.pdf
+            // We match by event_id embedded in the sign link, or fall back to
+            // scanning for any file whose name contains the event_id.
+            const matchByEventId = listed.find((f) =>
+              f.name.includes(row.event_id.slice(0, 8))
+            );
+
+            // Also try matching the client name slug against stored files
+            const clientSlug = (row.client_name ?? "")
+              .replace(/[^a-zA-Z0-9]/g, "-")
+              .toLowerCase();
+            const matchByClient =
+              !matchByEventId && clientSlug.length > 3
+                ? listed.find((f) =>
+                    f.name.toLowerCase().includes(clientSlug.slice(0, 12))
+                  )
+                : null;
+
+            const match = matchByEventId ?? matchByClient ?? null;
+            if (!match) continue;
+
+            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/contracts/signed/${match.name}`;
+            row.signature_url = publicUrl;
+
+            // Backfill DB asynchronously (best-effort, don't block the query)
+            backfillPromises.push(
+              supabase
+                .from("contracts")
+                .update({ signature_url: publicUrl })
+                .eq("id", row.id)
+                .then(() => {}) as Promise<void>
+            );
+          }
+
+          // Fire-and-forget backfill
+          Promise.allSettled(backfillPromises);
+        }
+      }
+
+      return rows;
     },
   });
 
@@ -791,6 +854,7 @@ function BookingsPage() {
               <ContractsTab
                 rows={archivedSigned}
                 loading={contracts.isLoading}
+                archiveMode
               />
             </TabsContent>
           </>
@@ -2102,15 +2166,22 @@ function BookingTable({
 function ContractsTab({
   rows,
   loading,
+  archiveMode = false,
 }: {
   rows: ContractRow[];
   loading: boolean;
+  /** When true we're rendering the signed archive — hide the pending sign-link column */
+  archiveMode?: boolean;
 }) {
   const qc = useQueryClient();
   const { user } = useAuth();
 
   const regenerate = useMutation({
     mutationFn: async (row: ContractRow) => {
+      if (row.signature_url) {
+        throw new Error("Contract already signed — cannot regenerate");
+      }
+
       const { data: ev, error } = await supabase
         .from("events")
         .select("*")
@@ -2176,7 +2247,9 @@ function ContractsTab({
     return (
       <Card>
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          No contracts yet. Contracts are created automatically when a new booking is saved.
+          {archiveMode
+            ? "No signed contracts yet."
+            : "No pending contracts. Contracts are created automatically when a new booking is saved."}
         </CardContent>
       </Card>
     );
@@ -2186,101 +2259,106 @@ function ContractsTab({
     <Card>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
+          <div className="min-w-[700px]">
             <Table>
               <TableHeader>
-            <TableRow>
-              <TableHead>Client</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Facility</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Signed</TableHead>
-              <TableHead>Sign Link</TableHead>
-              <TableHead className="text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell className="font-medium">
-                  {r.organization || r.client_name || "—"}
-                </TableCell>
-                <TableCell>
-                  {r.event_type ? eventTypeLabel(r.event_type) : "—"}
-                </TableCell>
-                <TableCell>
-                  {r.facility ? facilityLabel(r.facility) : "—"}
-                </TableCell>
-                <TableCell>{r.event_date ?? "—"}</TableCell>
-                <TableCell>
-                  {r.status ? statusBadge(r.status) : "—"}
-                </TableCell>
-                <TableCell>
-                  {r.signature_url ? (
-                    <Badge variant="outline" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                      Signed
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                      Pending
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className="max-w-[180px]">
-                  {r.content ? (
-                    <div className="flex items-center gap-1">
-                      <span className="truncate font-mono text-xs text-muted-foreground max-w-[120px]" title={r.content}>
-                        {r.content.length > 40 ? r.content.slice(0, 40) + "…" : r.content}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 shrink-0 px-1 text-xs"
-                        onClick={() => {
-                          navigator.clipboard.writeText(r.content);
-                          toast.success("Link copied");
-                        }}
-                      >
-                        Copy
-                      </Button>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    {r.signature_url && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        asChild
-                      >
-                        <a href={r.signature_url} target="_blank" rel="noopener noreferrer">
-                          View PDF
-                        </a>
-                      </Button>
-                    )}
-                    {!r.signature_url && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={regenerate.isPending}
-                        onClick={() => regenerate.mutate(r)}
-                      >
-                        {regenerate.isPending && (
-                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Facility</TableHead>
+                  <TableHead>Date</TableHead>
+                  {/* Status badge only shown in the pending (non-archive) tab */}
+                  {!archiveMode && <TableHead>Status</TableHead>}
+                  {/* Sign link column only relevant while contract is unsigned */}
+                  {!archiveMode && <TableHead>Sign Link</TableHead>}
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">
+                      {r.organization || r.client_name || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {r.event_type ? eventTypeLabel(r.event_type) : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {r.facility ? facilityLabel(r.facility) : "—"}
+                    </TableCell>
+                    <TableCell>{r.event_date ?? "—"}</TableCell>
+
+                    {!archiveMode && (
+                      <TableCell>
+                        {r.signature_url ? (
+                          <Badge variant="outline" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                            Signed
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                            Pending
+                          </Badge>
                         )}
-                        Regenerate Link
-                      </Button>
+                      </TableCell>
                     )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+
+                    {!archiveMode && (
+                      <TableCell className="max-w-[200px]">
+                        {r.content ? (
+                          <div className="flex items-center gap-1">
+                            <span
+                              className="truncate font-mono text-xs text-muted-foreground max-w-[140px]"
+                              title={r.content}
+                            >
+                              {r.content.length > 45
+                                ? r.content.slice(0, 45) + "…"
+                                : r.content}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 shrink-0 px-1 text-xs"
+                              onClick={() => {
+                                navigator.clipboard.writeText(r.content);
+                                toast.success("Link copied");
+                              }}
+                            >
+                              Copy
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </TableCell>
+                    )}
+
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        {r.signature_url ? (
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={r.signature_url} target="_blank" rel="noopener noreferrer">
+                              View PDF
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={regenerate.isPending}
+                            onClick={() => regenerate.mutate(r)}
+                          >
+                            {regenerate.isPending && (
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            )}
+                            Regenerate Link
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </CardContent>

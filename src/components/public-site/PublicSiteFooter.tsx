@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
-import villageRecreationLogo from "@/assets/Village_Recreation-Logo.png";
+const villageRecreationLogo = "https://yjgylhjuqggnetfwqqgh.supabase.co/storage/v1/object/sign/assets/Village_Recreation-Logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jMTEwZjk4NS03MTUyLTQ0MjEtYjcwYy00NDNmMTNhNmQ3Y2QiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvVmlsbGFnZV9SZWNyZWF0aW9uLUxvZ28ucG5nIiwiaWF0IjoxNzgwODE5OTkyLCJleHAiOjE4NzU0Mjc5OTJ9.cwzmVd0mFRcRIXOcL61_5MQLgmONg91axWpdEFgDJjg";
 import { PUBLIC_HEADER_PADDING, publicShellInnerStyle, PUBLIC_HEADER_MIN_HEIGHT_PX } from "@/lib/public-shell";
 
 const VM_RED = "#C0272D";
@@ -43,7 +43,7 @@ export function PublicSiteFooter({ fullWidth = false, fixed = false }: PublicSit
         }}
       >
         <div style={{ justifySelf: "start", minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 12, color: "#aaa" }}>Powered by SULWE</p>
+          <p style={{ margin: 0, fontSize: 12, color: "#aaa" }}>Powered by Sulwe Agency</p>
         </div>
         <div
           style={{
@@ -72,8 +72,26 @@ export function PublicSiteFooter({ fullWidth = false, fixed = false }: PublicSit
           />
         </div>
         <div style={{ justifySelf: "end", minWidth: 0 }}>
-          <Link to="/login" style={{ fontSize: 12, color: VM_RED, textDecoration: "none", fontWeight: 500 }}>
-            Admin sign up
+          <Link
+            to="/login"
+            title="Admin"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              border: `1px solid ${VM_RED}`,
+              color: VM_RED,
+              textDecoration: "none",
+              background: "transparent",
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
           </Link>
         </div>
       </div>

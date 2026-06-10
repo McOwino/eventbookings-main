@@ -23,7 +23,6 @@ import {
   facilityShowcaseQueryOptions,
   publicEventsQueryOptions,
 } from "@/lib/queries";
-import "@/styles/testimonials.css";
 import { InterestForm } from "@/components/InterestForm";
 import { PublicSiteFooter } from "@/components/public-site/PublicSiteFooter";
 import { PublicSiteHeader } from "@/components/public-site/PublicSiteHeader";
@@ -66,6 +65,7 @@ interface CalendarEvent {
   type: "birthday" | "school" | "hangout" | "league";
   status: EventStatus;
   event_space?: string | null;
+  pax?: number | null;
 }
 
 interface PublicFeedbackRow {
@@ -85,7 +85,7 @@ const EVENT_STATUS_TAG: Record<
 > = {
   Confirmed: { label: "Confirmed", background: "#E8F5E9", color: "#2E7D32" },
   Tentative: { label: "Tentative", background: "#FFF8E1", color: "#E65100" },
-  Canceled: { label: "Cancelled", background: "#FCEBEB", color: "#791F1F" },
+  Canceled: { label: "Cancelled", background: "#F0F0F0", color: "#888888" },
 };
 
 function EventStatusTag({ status }: { status: EventStatus }) {
@@ -213,6 +213,7 @@ function mapPublicEventToCalendar(e: PublicEvent): CalendarEvent {
     type: mapEventType(e.type),
     status: e.status,
     event_space: e.event_space ?? undefined,
+    pax: e.pax ?? null,
   };
 }
 
@@ -670,7 +671,7 @@ function EventCalendar({ events }: { events: CalendarEvent[] }) {
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1a1a1a" }}>
               {formatDate(selectedDate)}
             </h3>
-            <span style={{ fontSize: 13, color: "#aaa" }}>
+            <span style={{ fontSize: 13, color: "#666" }}>
               {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""}
             </span>
           </div>
@@ -692,15 +693,14 @@ function EventCalendar({ events }: { events: CalendarEvent[] }) {
                 <div
                   key={ev.id}
                   style={{
-                    background: "#fff",
-                    border: "0.5px solid #e8e4de",
-                    borderLeft: `3px solid ${ev.facilityColor}`,
+                    background: ev.status === "Canceled" ? "#F2F2F2" : `${ev.facilityColor}28`,
+                    border: ev.status === "Canceled" ? "1px solid #D0D0D0" : `1px solid ${ev.facilityColor}60`,
+                    borderLeft: ev.status === "Canceled" ? "4px solid #BBBBBB" : `4px solid ${ev.facilityColor}`,
                     borderRadius: "0 10px 10px 0",
-                    padding: "10px 14px",
+                    padding: "12px 16px",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 4,
-                    opacity: ev.status === "Canceled" ? 0.65 : 1,
+                    gap: 6,
                   }}
                 >
                   <div
@@ -711,12 +711,12 @@ function EventCalendar({ events }: { events: CalendarEvent[] }) {
                       gap: 10,
                     }}
                   >
-                    <span style={{ fontWeight: 600, fontSize: 14, color: "#1a1a1a", minWidth: 0 }}>
+                    <span style={{ fontWeight: 700, fontSize: 15, color: "#111111", minWidth: 0 }}>
                       {ev.title}
                     </span>
                     <EventStatusTag status={ev.status} />
                   </div>
-                  <div style={{ display: "flex", gap: 12, fontSize: 12, color: "#888", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 10, fontSize: 13, color: "#444", flexWrap: "wrap", marginTop: 2 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                       <Icons.MapPin />
                       {ev.facility}
@@ -729,6 +729,12 @@ function EventCalendar({ events }: { events: CalendarEvent[] }) {
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Icons.Tag />
                         {ev.event_space}
+                      </span>
+                    )}
+                    {ev.pax != null && ev.pax > 0 && (
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <Icons.Users />
+                        {ev.pax} pax
                       </span>
                     )}
                   </div>
@@ -1457,7 +1463,9 @@ export default function VillageMarketPage() {
           .from("testimonial_settings")
           .select("min_score, max_cards, shuffle, autoplay, speed_ms")
           .eq("id", 1)
-          .maybeSingle(),
+          .maybeSingle()
+          .then((r: any) => r)
+          .catch(() => ({ data: null, error: null })),
         supabase
           .from("feedback")
           .select("id, name, facility, nature_of_visit, score, satisfaction_level, comments, created_at")
@@ -1510,7 +1518,7 @@ export default function VillageMarketPage() {
           to { opacity: 1; transform: translateY(0); }
         }
         .section-animate {
-          animation: fadeUp 0.5s ease both;
+          animation: fadeUp 0.5s ease forwards;
           /* Fallback: ensure visible if animation never fires */
           opacity: 1;
         }
@@ -1741,6 +1749,361 @@ export default function VillageMarketPage() {
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+          }
+        }
+
+        /* ── Testimonials Section (inlined from testimonials.css) ── */
+        .fb-section-wrap {
+          background: #fcebeb;
+          background-image:
+            radial-gradient(ellipse at 20% 50%, rgba(192,39,45,0.05) 0%, transparent 60%),
+            radial-gradient(ellipse at 80% 20%, rgba(192,39,45,0.08) 0%, transparent 50%);
+          margin-left: calc(-1 * clamp(16px, 4vw, 28px));
+          margin-right: calc(-1 * clamp(16px, 4vw, 28px));
+          padding: clamp(32px, 5vw, 56px) clamp(16px, 4vw, 28px);
+        }
+
+        .fb-section-title {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: clamp(2.1rem, 3.75vw, 2.75rem);
+          color: #C0272D;
+          font-weight: 600;
+          font-style: italic;
+          margin: 0 0 0.2rem;
+          line-height: 1.2;
+          text-align: center;
+        }
+
+        .fb-section-sub {
+          font-size: 0.95rem;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: #8a7560;
+          margin: 0 0 1.8rem;
+          text-align: center;
+        }
+
+        .t-card-red {
+          position: relative;
+          width: 100%;
+          max-width: 600px;
+          background: #ffffff;
+          border-radius: 24px;
+          padding: 3.1rem 2.5rem 2.2rem;
+          box-shadow: 0 12px 50px rgba(192,39,45,0.08), 0 4px 12px rgba(192,39,45,0.04);
+          border: 1px solid rgba(192,39,45,0.08);
+          -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+          animation: tFadeUp 0.5s ease both;
+          margin: 0 auto;
+        }
+
+        @keyframes tFadeUp {
+          from { opacity: 0; transform: translateY(16px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .t-quote-badge {
+          position: absolute;
+          top: -28px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #C0272D, #9e2227);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.75rem;
+          color: white;
+          box-shadow: 0 4px 16px rgba(192,39,45,0.3);
+        }
+
+        .t-text-red {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: clamp(1.25rem, 1.75vw, 1.48rem);
+          color: #2c2416;
+          line-height: 1.7;
+          text-align: center;
+          font-style: italic;
+          margin: 0.5rem 0 1.2rem;
+        }
+
+        .t-divider-red {
+          width: 75px;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, #C0272D, transparent);
+          margin: 1rem auto;
+        }
+
+        .t-author-red {
+          font-family: 'Dancing Script', cursive;
+          font-size: 1.75rem;
+          color: #C0272D;
+          text-align: center;
+          line-height: 1;
+        }
+
+        .t-meta-red {
+          display: flex;
+          justify-content: center;
+          gap: 0.75rem;
+          margin-top: 0.8rem;
+          flex-wrap: wrap;
+        }
+
+        .t-tag-red {
+          font-size: 0.85rem;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #C0272D;
+          background: rgba(192,39,45,0.06);
+          border: 1px solid rgba(192,39,45,0.15);
+          border-radius: 25px;
+          padding: 0.3rem 0.95rem;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .t-prog-dots {
+          display: flex;
+          gap: 0.4rem;
+          justify-content: center;
+          margin-top: 1rem;
+        }
+
+        .t-prog-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(192,39,45,0.2);
+          transition: all 0.3s;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+        }
+
+        .t-prog-dot.active {
+          background: #C0272D;
+          width: 22px;
+          border-radius: 3px;
+        }
+
+        .t-ctrl-btn {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          border: 1px solid rgba(192,39,45,0.2);
+          background: rgba(255,255,255,0.7);
+          color: #C0272D;
+          font-size: 1.25rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+
+        .t-ctrl-btn:hover {
+          background: #C0272D;
+          color: white;
+          border-color: #C0272D;
+        }
+
+        .t-ctrl-btn-play {
+          width: 65px;
+          height: 65px;
+          background: linear-gradient(135deg, #C0272D, #9e2227);
+          border: none;
+          color: white;
+          font-size: 1.5rem;
+          box-shadow: 0 4px 16px rgba(192,39,45,0.3);
+        }
+
+        .t-ctrl-btn-play:hover {
+          transform: scale(1.05);
+          box-shadow: 0 6px 22px rgba(192,39,45,0.4);
+        }
+
+        .t-counter-text {
+          font-size: 1rem;
+          color: #8a7560;
+          letter-spacing: 0.05em;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .fb-section-wrap,
+          .t-card-red {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+        }
+
+        .fb-section-wrap {
+          background: #fcebeb;
+          background-image:
+            radial-gradient(ellipse at 20% 50%, rgba(192,39,45,0.05) 0%, transparent 60%),
+            radial-gradient(ellipse at 80% 20%, rgba(192,39,45,0.08) 0%, transparent 50%);
+          margin-left: calc(-1 * clamp(16px, 4vw, 28px));
+          margin-right: calc(-1 * clamp(16px, 4vw, 28px));
+          padding: clamp(32px, 5vw, 56px) clamp(16px, 4vw, 28px);
+        }
+        .fb-section-title {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: clamp(2.1rem, 3.75vw, 2.75rem);
+          color: #C0272D;
+          font-weight: 600;
+          font-style: italic;
+          margin: 0 0 0.2rem;
+          line-height: 1.2;
+          text-align: center;
+        }
+        .fb-section-sub {
+          font-size: 0.95rem;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: #8a7560;
+          margin: 0 0 1.8rem;
+          text-align: center;
+        }
+        .t-card-red {
+          position: relative;
+          width: 100%;
+          max-width: 600px;
+          background: #ffffff;
+          border-radius: 24px;
+          padding: 3.1rem 2.5rem 2.2rem;
+          box-shadow: 0 12px 50px rgba(192,39,45,0.08), 0 4px 12px rgba(192,39,45,0.04);
+          border: 1px solid rgba(192,39,45,0.08);
+          -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+          animation: tFadeUp 0.5s ease both;
+          margin: 0 auto;
+        }
+        @keyframes tFadeUp {
+          from { opacity: 0; transform: translateY(16px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .t-quote-badge {
+          position: absolute;
+          top: -28px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #C0272D, #9e2227);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.75rem;
+          color: white;
+          box-shadow: 0 4px 16px rgba(192,39,45,0.3);
+        }
+        .t-text-red {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: clamp(1.25rem, 1.75vw, 1.48rem);
+          color: #2c2416;
+          line-height: 1.7;
+          text-align: center;
+          font-style: italic;
+          margin: 0.5rem 0 1.2rem;
+        }
+        .t-divider-red {
+          width: 75px;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, #C0272D, transparent);
+          margin: 1rem auto;
+        }
+        .t-author-red {
+          font-family: 'Dancing Script', cursive;
+          font-size: 1.75rem;
+          color: #C0272D;
+          text-align: center;
+          line-height: 1;
+        }
+        .t-meta-red {
+          display: flex;
+          justify-content: center;
+          gap: 0.75rem;
+          margin-top: 0.8rem;
+          flex-wrap: wrap;
+        }
+        .t-tag-red {
+          font-size: 0.85rem;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #C0272D;
+          background: rgba(192,39,45,0.06);
+          border: 1px solid rgba(192,39,45,0.15);
+          border-radius: 25px;
+          padding: 0.3rem 0.95rem;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .t-prog-dots {
+          display: flex;
+          gap: 0.4rem;
+          justify-content: center;
+          margin-top: 1rem;
+        }
+        .t-prog-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(192,39,45,0.2);
+          transition: all 0.3s;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+        }
+        .t-prog-dot.active {
+          background: #C0272D;
+          width: 22px;
+          border-radius: 3px;
+        }
+        .t-ctrl-btn {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          border: 1px solid rgba(192,39,45,0.2);
+          background: rgba(255,255,255,0.7);
+          color: #C0272D;
+          font-size: 1.25rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+        .t-ctrl-btn:hover {
+          background: #C0272D;
+          color: white;
+          border-color: #C0272D;
+        }
+        .t-ctrl-btn-play {
+          width: 65px;
+          height: 65px;
+          background: linear-gradient(135deg, #C0272D, #9e2227);
+          border: none;
+          color: white;
+          font-size: 1.5rem;
+          box-shadow: 0 4px 16px rgba(192,39,45,0.3);
+        }
+        .t-ctrl-btn-play:hover {
+          transform: scale(1.05);
+          box-shadow: 0 6px 22px rgba(192,39,45,0.4);
+        }
+        .t-counter-text {
+          font-size: 1rem;
+          color: #8a7560;
+          letter-spacing: 0.05em;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .fb-section-wrap, .t-card-red {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
           }
         }
       `}</style>

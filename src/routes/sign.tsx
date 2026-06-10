@@ -4,7 +4,7 @@ import SignaturePad from "signature_pad";
 import { toPng } from "html-to-image";
 import { PDFDocument } from 'pdf-lib';
 import { supabase } from "@/integrations/supabase/client";
-import { buildContractHTML, type ContractData } from "@/lib/contract-utils";
+import { buildContractHTML, fetchStampUrl, type ContractData } from "@/lib/contract-utils";
 import { PublicSiteHeader } from "../components/public-site/PublicSiteHeader";
 import { PublicSiteFooter } from "@/components/public-site/PublicSiteFooter";
 import { PUBLIC_MAIN_PADDING, publicShellInnerStyle, PUBLIC_HEADER_MIN_HEIGHT_PX } from "@/lib/public-shell";
@@ -47,6 +47,11 @@ function SignPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const lastPdfRef = useRef<{ blob: Blob; fname: string } | null>(null);
   const [sigPreview, setSigPreview] = useState<string | null>(null);
+  const [stampUrl, setStampUrl] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    fetchStampUrl().then(setStampUrl).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!c) return;
@@ -97,7 +102,7 @@ function SignPage() {
       pdfClone.innerHTML = "";
       const wrapper = document.createElement("div");
       wrapper.className = styles.contractBox;
-      wrapper.innerHTML = buildContractHTML(signed, true);
+      wrapper.innerHTML = buildContractHTML(signed, true, stampUrl);
       pdfClone.appendChild(wrapper);
       await document.fonts.ready;
       // Use html-to-image to render the wrapper (which has the exact preview styles)
@@ -198,37 +203,41 @@ function SignPage() {
   };
 
   async function uploadToSupabaseFetch(blob: Blob, fileName: string): Promise<string> {
-    const SUPABASE_URL = (import.meta as any).env.VITE_SUPABASE_URL || (process.env.SUPABASE_URL as string);
-    const SUPABASE_KEY = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY || (process.env.SUPABASE_PUBLISHABLE_KEY as string);
-    const SUPABASE_BUCKET = 'contracts';
-    if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Missing Supabase env vars');
+    const SUPABASE_URL = (import.meta as any).env.VITE_SUPABASE_URL as string;
+    const SUPABASE_KEY = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+    const BUCKET = "contracts";
+    if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error("Missing Supabase env vars");
+
+    // Use the live session JWT, not the anon key
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated — please log in and try again");
 
     const uploadPath = `signed/${fileName}`;
-    const endpoint = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${uploadPath}`;
-    const headers: Record<string,string> = {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/pdf',
-      'x-upsert': 'true',
+    const endpoint = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${uploadPath}`;
+    const headers: Record<string, string> = {
+      apikey: SUPABASE_KEY,                        // project identifier — anon key is correct here
+      Authorization: `Bearer ${session.access_token}`, // user JWT for RLS
+      "Content-Type": "application/pdf",
+      "x-upsert": "true",
     };
 
     let res: Response | null = null;
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        res = await fetch(endpoint, { method: 'POST', headers, body: blob });
+        res = await fetch(endpoint, { method: "POST", headers, body: blob });
         break;
       } catch (netErr: any) {
-        if (attempt === 2) throw new Error(`Network error after 2 attempts: ${netErr?.message || netErr}`);
+        if (attempt === 2) throw new Error(`Network error after 2 attempts: ${netErr?.message ?? netErr}`);
         await new Promise((r) => setTimeout(r, 1500));
       }
     }
     if (!res || !res.ok) {
-      let text = '';
-      try { text = await (res ? res.text() : Promise.resolve('no response')); } catch (_) {}
+      let text = "";
+      try { text = await (res ? res.text() : Promise.resolve("no response")); } catch (_) {}
       try { const j = JSON.parse(text); text = j.message || j.error || text; } catch (_) {}
-      throw new Error(`Upload failed (${res?.status ?? 'no-res'}): ${text}`);
+      throw new Error(`Upload failed (${res?.status ?? "no-res"}): ${text}`);
     }
-    return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${uploadPath}`;
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${uploadPath}`;
   }
 
   const pageShell: CSSProperties = {
@@ -252,7 +261,7 @@ function SignPage() {
       {payload && (
         <div className="space-y-4">
           <div className={styles.contractBox}>
-            <div ref={cloneRef} dangerouslySetInnerHTML={{ __html: buildContractHTML(payload, false) }} />
+            <div ref={cloneRef} dangerouslySetInnerHTML={{ __html: buildContractHTML(payload, false, stampUrl) }} />
           </div>
           <div ref={pdfCloneRef} className={styles.pdfClone} aria-hidden="true" />
           {step === "view" && (

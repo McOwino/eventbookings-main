@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ROLE_OPTIONS, type AppRoleEnum, roleLabel } from "@/lib/facility-utils";
-import { Loader2, Plus, X, UserPlus, Eye, EyeOff, RefreshCw, Copy, Trash2 } from "lucide-react";
+import { Loader2, Plus, X, UserPlus, Eye, EyeOff, RefreshCw, Copy, Trash2, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -144,6 +144,7 @@ function UsersPage() {
         </p>
       </div>
 
+      <StampCard />
       <CreateAdminCard onCreated={() => qc.invalidateQueries({ queryKey: ["admin", "users-roles"] })} />
 
       <Card>
@@ -264,6 +265,112 @@ function UsersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ── Stamp preview / uploader ───────────────────────────────────────────────
+const STAMP_KEY = "company_stamp";
+const STAMP_BUCKET = "assets";
+
+function StampCard() {
+  const { isSuperAdmin } = useAuth();
+  const qc = useQueryClient();
+
+  const stampQuery = useQuery({
+    queryKey: ["app_assets", STAMP_KEY],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_assets")
+        .select("url")
+        .eq("key", STAMP_KEY)
+        .single();
+      if (error) throw error;
+      return data?.url as string | null;
+    },
+  });
+
+  const upload = useMutation({
+    mutationFn: async (file: File) => {
+      const ext = file.name.split(".").pop();
+      const path = `stamps/company_stamp.${ext}`;
+
+      const { error: upErr } = await supabase.storage
+        .from(STAMP_BUCKET)
+        .upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+
+      const { data: urlData } = supabase.storage
+        .from(STAMP_BUCKET)
+        .getPublicUrl(path);
+
+      const url = urlData.publicUrl + "?t=" + Date.now();
+
+      const { error: dbErr } = await supabase
+        .from("app_assets")
+        .upsert(
+          { key: STAMP_KEY, url, updated_at: new Date().toISOString() },
+          { onConflict: "key" }
+        );
+      if (dbErr) throw dbErr;
+      return url;
+    },
+    onSuccess: () => {
+      toast.success("Stamp updated");
+      qc.invalidateQueries({ queryKey: ["app_assets", STAMP_KEY] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-6 p-4">
+        <div className="flex-shrink-0">
+          {stampQuery.isLoading ? (
+            <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />
+          ) : stampQuery.data ? (
+            <img
+              src={stampQuery.data}
+              alt="Company stamp"
+              className="h-24 w-24 rounded border object-contain"
+            />
+          ) : (
+            <div className="flex h-24 w-24 items-center justify-center rounded border border-dashed text-xs text-muted-foreground">
+              No stamp
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 space-y-1">
+          <p className="text-sm font-semibold">Company stamp</p>
+          <p className="text-xs text-muted-foreground">
+            This stamp appears on all signed contracts. PNG with transparent
+            background recommended.
+          </p>
+
+          {isSuperAdmin && (
+            <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-accent">
+              {upload.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {upload.isPending ? "Uploading…" : "Upload new stamp"}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={upload.isPending}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) upload.mutate(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

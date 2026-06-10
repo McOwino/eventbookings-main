@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useMemo, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -28,6 +28,7 @@ interface FeedbackRow {
   name: string;
   contact: string;
   facility: string;
+  nature_of_visit: string;
   score: number;
   satisfaction_level: string;
   comments: string | null;
@@ -64,6 +65,20 @@ function escapeCsv(v: string) {
 
 function AdminFeedback() {
   const { roles } = useAuth();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-feedback-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "feedback" },
+        () => { qc.invalidateQueries({ queryKey: ["admin", "feedback"] }); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   const [facility, setFacility] = useState<string>("all");
   const [level, setLevel] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -97,12 +112,30 @@ function AdminFeedback() {
   const [tMinScore, setTMinScore]     = useState(7);
   const [tMaxCards, setTMaxCards]     = useState(10);
   const [tShuffle, setTShuffle]       = useState(true);
-  const [tAutoplay, setTAutoplay]     = useState(false);
+  const [tAutoplay, setTAutoplay]     = useState(true);
   const [tSpeed, setTSpeed]           = useState(5000);
   const [tIndex, setTIndex]           = useState(0);
   const [tPlaying, setTPlaying]       = useState(false);
   const [isSaving, setIsSaving]       = useState(false);
+  
   const tTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Load saved settings from DB on mount
+  useEffect(() => {
+    (supabase as any)
+      .from("testimonial_settings")
+      .select("min_score, max_cards, shuffle, autoplay, speed_ms")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (!data) return;
+        setTMinScore(data.min_score);
+        setTMaxCards(data.max_cards);
+        setTShuffle(data.shuffle);
+        setTAutoplay(data.autoplay);
+        setTSpeed(data.speed_ms);
+      });
+  }, []);
 
   const filtered = useMemo(() => {
     const rows = data ?? [];
@@ -217,7 +250,7 @@ function AdminFeedback() {
 
   const saveSettings = async () => {
     setIsSaving(true);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("testimonial_settings")
       .update({
         min_score:  tMinScore,

@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { buildContractHTML, type ContractData } from "@/lib/contract-utils";
+import { buildContractHTML, fetchStampUrl, type ContractData } from "@/lib/contract-utils";
 import styles from "@/styles/vmr-form.module.css";
 
 interface Props {
@@ -40,14 +40,39 @@ export function ContractSigningModal({ open, onClose, data }: Props) {
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const lastPdfRef = useRef<{ blob: Blob; fname: string } | null>(null);
+  const [stampUrl, setStampUrl] = useState<string | undefined>(undefined);
+  const [alreadySigned, setAlreadySigned] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      fetchStampUrl().then(setStampUrl).catch(() => {});
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
       setStep("sign");
       setPublicUrl(null);
       setErrorMsg(null);
+      setAlreadySigned(false);
       return;
     }
+
+    // Check if contract already signed
+    if (data?.eventId) {
+      supabase
+        .from("contracts")
+        .select("event_id, signature_url")
+        .eq("event_id", data.eventId)
+        .maybeSingle()
+        .then(({ data: existing }) => {
+          if (existing?.signature_url) {
+            setAlreadySigned(true);
+            setPublicUrl(existing.signature_url);
+          }
+        });
+    }
+
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     const ratio = Math.max(window.devicePixelRatio ?? 1, 1);
@@ -68,7 +93,7 @@ export function ContractSigningModal({ open, onClose, data }: Props) {
     const el = cloneRef.current!;
 
       // 1. Stamp content inside the module's contractBox so the same CSS applies
-      el.innerHTML = `<div class="${styles.contractBox}">${buildContractHTML(signed, true)}</div>`;
+      el.innerHTML = `<div class="${styles.contractBox}">${buildContractHTML(signed, true, stampUrl)}</div>`;
 
     // 2. Ensure the same Google fonts are available (DM Serif Display + DM Sans)
     const fontHref = "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap";
@@ -139,11 +164,19 @@ export function ContractSigningModal({ open, onClose, data }: Props) {
     const BUCKET = "contracts";
     if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error("Missing Supabase env vars");
 
+    // Always fetch a fresh session — critical on mobile where the cached
+    // session may have expired or not yet hydrated from storage.
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) {
+      throw new Error("Not authenticated - please login and try again");
+    }
+
     const uploadPath = `signed/${fileName}`;
     const endpoint = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${uploadPath}`;
     const headers: Record<string, string> = {
       apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/pdf",
       "x-upsert": "true",
     };
@@ -175,17 +208,47 @@ export function ContractSigningModal({ open, onClose, data }: Props) {
   // ─── Upsert DB record ─────────────────────────────────────────────────────
   async function persistContract(signed: ContractData, url: string) {
     if (!data.eventId || !url) return;
+
     const { error } = await supabase.from("contracts").upsert(
       {
         event_id: data.eventId,
-        content: buildContractHTML(signed, true),
+        content: buildContractHTML(signed, true, stampUrl),
         signature_url: url,
+        signed_at: new Date().toISOString(),
         generated_by: user?.id ?? null,
       },
       { onConflict: "event_id" }
     );
-    if (error) console.error("Failed to upsert contract record:", error.message);
-    else qc?.invalidateQueries?.({ queryKey: ["admin", "contracts"] });
+
+    if (error) {
+      console.error("Failed to upsert contract record:", error.message);
+      return;
+    }
+
+    // Update event contract_status
+    await supabase
+      .from("events")
+      .update({ contract_status: "signed" })
+      .eq("id", data.eventId);
+
+    // Also update the event status to confirmed if it's still tentative AND has payment
+    const { data: payments } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("event_id", data.eventId)
+      .maybeSingle();
+
+    if (payments) {
+      await supabase
+        .from("events")
+        .update({ status: "confirmed" })
+        .eq("id", data.eventId);
+    }
+
+    // Invalidate queries
+    qc?.invalidateQueries?.({ queryKey: ["admin", "contracts"] });
+    qc?.invalidateQueries?.({ queryKey: ["admin", "bookings"] });
+    qc?.invalidateQueries?.({ queryKey: ["admin", "events"] });
   }
 
   // ─── Main submit handler ──────────────────────────────────────────────────
@@ -269,9 +332,23 @@ export function ContractSigningModal({ open, onClose, data }: Props) {
       <div ref={cloneRef} aria-hidden className={styles.pdfClone} style={{ pointerEvents: "none", zIndex: -1 }} />
 
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full !rounded-xl">
 
-          {step === "sign" && (
+          {alreadySigned ? (
+            <div className="flex flex-col items-center gap-4 py-12 text-center">
+              <div className="text-5xl">🔒</div>
+              <h2 className="font-serif text-xl font-bold">Already Signed</h2>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                This contract has already been signed. A new signature cannot be added.
+              </p>
+              {publicUrl && (
+                <a href={publicUrl} target="_blank" rel="noreferrer" className="text-sm underline">
+                  View signed contract
+                </a>
+              )}
+              <Button onClick={onClose}>Close</Button>
+            </div>
+          ) : step === "sign" && (
             <>
               <DialogHeader>
                 <DialogTitle className="font-serif text-lg">Client Signature</DialogTitle>
@@ -279,7 +356,7 @@ export function ContractSigningModal({ open, onClose, data }: Props) {
 
               <div
                 className={styles.contractBox}
-                dangerouslySetInnerHTML={{ __html: buildContractHTML(data, false) }}
+                dangerouslySetInnerHTML={{ __html: buildContractHTML(data, false, stampUrl) }}
               />
 
               <div className={styles.signPanel}>
@@ -307,14 +384,14 @@ export function ContractSigningModal({ open, onClose, data }: Props) {
             </>
           )}
 
-          {step === "uploading" && (
+          {step === "uploading" && !alreadySigned && (
             <div className="flex flex-col items-center gap-4 py-16 text-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Uploading to secure storage…</p>
             </div>
           )}
 
-          {step === "done" && (
+          {step === "done" && !alreadySigned && (
             <div className="flex flex-col items-center gap-4 py-12 text-center">
               <div className="text-5xl">✅</div>
               <h2 className="font-serif text-xl font-bold">Contract Signed</h2>
@@ -353,7 +430,7 @@ export function ContractSigningModal({ open, onClose, data }: Props) {
             </div>
           )}
 
-          {step === "error" && (
+          {step === "error" && !alreadySigned && (
             <div className="flex flex-col items-center gap-4 py-12 text-center">
               <div className="text-5xl">⚠️</div>
               <h2 className="font-serif text-xl font-bold">Upload Failed</h2>

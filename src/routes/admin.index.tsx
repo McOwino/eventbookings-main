@@ -227,19 +227,62 @@ function AdminDashboard() {
       {
         queryKey: ["admin", "analytics", filters],
         queryFn: async (): Promise<AnalyticsRow[]> => {
-          let q = supabase.from("analytics_master").select("*");
+          // Get events with their payments
+          let q = supabase
+            .from("events")
+            .select(`
+              *,
+              payments:payments(amount, payment_mode, date_paid, confirmation_code)
+            `);
 
           if (filters.facility !== "all") q = q.eq("facility", filters.facility);
           if (filters.eventType !== "all") q = q.eq("event_type", filters.eventType);
-          if (filters.status !== "all") q = q.eq("event_status", filters.status);
+          if (filters.status !== "all") q = q.eq("status", filters.status);
           if (filters.from) q = q.gte("event_date", filters.from);
           if (filters.to) q = q.lte("event_date", filters.to);
 
-          const { data, error } = await q
+          const { data: events, error: eventsErr } = await q
             .order("event_date", { ascending: false })
             .limit(2000);
-          if (error) throw error;
-          return (data ?? []) as AnalyticsRow[];
+
+          if (eventsErr) throw eventsErr;
+
+          // Transform to match AnalyticsRow structure
+          return (events ?? []).map((e: any) => ({
+            event_id: e.id,
+            booked_at: e.created_at,
+            client_name: e.client_name,
+            organization: e.organization,
+            contact_number: e.contact_number,
+            email: e.email,
+            event_type: e.event_type,
+            facility: e.facility,
+            event_space: e.event_space,
+            event_date: e.event_date,
+            start_time: e.start_time,
+            end_time: e.end_time,
+            pax: e.pax,
+            package_name: e.package_name,
+            package_options: e.package_options,
+            cost_per_person: e.cost_per_person,
+            gross_value: (e.payments || []).reduce((sum: number, p: any) => sum + (p.amount || 0), 0),
+            event_status: e.status,
+            how_did_you_hear: e.how_did_you_hear,
+            notes: e.notes,
+            total_deposited: (e.payments || []).reduce((sum: number, p: any) => sum + (p.amount || 0), 0),
+            total_spend: null,
+            clearance_deposit: null,
+            balance_outstanding: null,
+            clearance_mode: null,
+            cleared_at: null,
+            feedback_score: null,
+            satisfaction_level: null,
+            feedback_comments: null,
+            feedback_name: null,
+            inquiry_type: null,
+            call_status: null,
+            call_facility: null,
+          }));
         },
         staleTime: 60_000,
       },
